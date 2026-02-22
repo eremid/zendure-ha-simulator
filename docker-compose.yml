@@ -1,0 +1,68 @@
+---
+services:
+
+  # ─── MQTT broker ─────────────────────────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: zendure-mosquitto
+    ports:
+    - "1883:1883" # "cloud" MQTT  — simulator SF2400AC+ + HA cloud client
+    - "1884:1884" # "local" MQTT  — simulator Hyper 2000  + HA local client
+    - "9001:9001" # WebSocket (optional)
+    volumes:
+    - ./mosquitto:/mosquitto/config:ro
+    restart: unless-stopped
+
+  # ─── Device simulator ────────────────────────────────────────────────────────
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zendure-simulator
+    depends_on:
+    - mosquitto
+    ports:
+    - "8088:8088" # ZenSDK HTTP — exposed to host for debugging
+    environment:
+    - MQTT_HOST=mosquitto
+    - MQTT_PORT=1883
+    - LOCAL_MQTT_PORT=1884
+    - HTTP_PORT=8088
+    # P1 push: simulator → HA. Set HA_TOKEN in your shell or a .env file.
+    - HA_URL=http://homeassistant:8123
+    - HA_TOKEN=${HA_TOKEN:-}
+    restart: unless-stopped
+
+  # ─── Mock Zendure cloud API ───────────────────────────────────────────────────
+  mock-api:
+    build: ./mock_api
+    container_name: zendure-mock-api
+    ports:
+    - "10001:5000" # Reachable from host for debugging
+    environment:
+    # 'simulator' is the Docker service name — reachable directly on the
+    # internal Docker network without host.docker.internal tricks.
+    - SIMULATOR_HOST=${SIMULATOR_HOST:-simulator}
+    - SIMULATOR_HTTP_PORT=${SIMULATOR_HTTP_PORT:-8088}
+    restart: unless-stopped
+
+  # ─── Home Assistant ───────────────────────────────────────────────────────────
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: zendure-homeassistant
+    depends_on:
+    - mosquitto
+    - mock-api
+    - simulator
+    ports:
+    - "8123:8123"
+    volumes:
+    # HA configuration directory
+    - ./homeassistant:/config
+    # Mount the integration directly from the repo (read-only)
+    - ./Zendure-HA/custom_components/zendure_ha:/config/custom_components/zendure_ha:ro
+    environment:
+    - TZ=Europe/Paris
+    restart: unless-stopped
+
+# Set HA_TOKEN in your shell (or a .env file) to enable P1 push to HA.

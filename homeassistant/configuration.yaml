@@ -1,0 +1,29 @@
+---
+homeassistant:
+  name: Zendure Simulator
+  time_zone: Europe/Paris
+  unit_system: metric
+  currency: EUR
+
+# ──────────────────────────────────────────────────────────────────────────────
+# P1 meter simulation
+#
+# simulate.py updates this input_number via the HA REST API.
+# When configuring the Zendure integration, select: input_number.p1_power
+# ──────────────────────────────────────────────────────────────────────────────
+input_number:
+  p1_power:
+    name: P1 Power (Simulator)
+    min: -20000
+    max: 20000
+    step: 1
+    unit_of_measurement: W
+    mode: box
+    icon: mdi:transmission-tower
+
+logger:
+  default: warning
+  logs:
+    custom_components.zendure_ha: info
+
+history:
