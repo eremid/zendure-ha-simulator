@@ -45,6 +45,7 @@ import signal
 import sys
 import threading
 import time
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -714,7 +715,6 @@ def push_p1_to_ha(net_grid_w: int) -> None:
     global _p1_push_ok
     if not HA_TOKEN:
         return
-    import urllib.request
 
     url = f"{HA_URL}/api/states/input_number.p1_power"
     data = json.dumps({"state": str(net_grid_w)}).encode()
