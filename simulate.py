@@ -35,8 +35,6 @@ Configuration via environment variables:
                      is missed.  Filters out noisy /report echoes.
 """
 
-from __future__ import annotations
-
 import json
 import math
 import os
