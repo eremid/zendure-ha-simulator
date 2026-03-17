@@ -225,6 +225,8 @@ class DeviceSimulator:
         )
         self._lock = threading.Lock()
         self._msg_id = 0
+        self._pack_sns = config.get("pack_sns", [config["sn"]])
+        self._n_packs = len(self._pack_sns)
 
         pk = config["prod_key"]
         did = config["device_id"]
@@ -365,8 +367,8 @@ class DeviceSimulator:
         props = self._build_props()
         # Each battery pack SN must have a prefix recognised by ZendureBattery
         # (sn[0]='A' + sn[3]='3' → AIO2400, kWh=2.4).  Power is split evenly.
-        pack_sns = self.config.get("pack_sns", [self.config["sn"]])
-        n = len(pack_sns)
+        pack_sns = self._pack_sns
+        n = self._n_packs
         payload = {
             "deviceId": self.config["device_id"],
             "messageId": self._msg_id,
@@ -428,8 +430,8 @@ class DeviceSimulator:
         device entirely.
         """
         s = self.state
-        pack_sns = self.config.get("pack_sns", [self.config["sn"]])
-        n = len(pack_sns)
+        pack_sns = self._pack_sns
+        n = self._n_packs
         return {
             "properties": self._build_props(),
             "packData": [
